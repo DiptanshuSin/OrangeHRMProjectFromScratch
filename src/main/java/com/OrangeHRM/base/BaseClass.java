@@ -4,25 +4,39 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
 
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.firefox.FirefoxDriver;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.BeforeSuite;
 
 public class BaseClass {
 
-	protected Properties prop;
+	protected static Properties prop;
 	protected WebDriver driver;
 
 	@BeforeMethod
 	public void setup() throws IOException {
+		System.out.println("Setting Up WebDriver for:" + this.getClass().getSimpleName());
+		launchBrowser();
+		configureBrowser();
+		staticWait(2);
+	}
+
+	@BeforeSuite
+	public void loadConfig() throws IOException {
 		// Load zConfig file
 		prop = new Properties();
 		FileInputStream fis = new FileInputStream("src/main/resources/config.properties");
 		prop.load(fis);
 
+	}
+
+	public void launchBrowser() {
 		// Initialize WebDriver based on config files
 		String browser = prop.getProperty("browser");
 
@@ -33,6 +47,10 @@ public class BaseClass {
 		} else {
 			throw new IllegalArgumentException("browser not supported");
 		}
+	}
+
+	public void configureBrowser() {
+
 		// ImplicitWait
 		int implicitWait = Integer.parseInt(prop.getProperty("implicitWait"));
 		driver.manage().timeouts().implicitlyWait(Duration.ofSeconds(implicitWait));
@@ -47,5 +65,9 @@ public class BaseClass {
 	public void tearDown() {
 		if (driver != null)
 			driver.quit();
+	}
+	
+	public void staticWait(int seconds) {
+		LockSupport.parkNanos(TimeUnit.SECONDS.toNanos(seconds));
 	}
 }
